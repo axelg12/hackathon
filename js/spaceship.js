@@ -113,12 +113,12 @@ function init() {
   }
 
   function gameLoop() {
+    requestAnimationFrame(gameLoop);
     state.currentTick = timestamp();
     if (state.currentTick === state.prevTick) return;
     update();
     state.prevTick = state.currentTick;
     draw();
-    requestAnimationFrame(gameLoop);
   }
   gameLoop();
 
