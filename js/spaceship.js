@@ -139,14 +139,18 @@ function Enemy(x, y) {
   this.y = y;
   this.width = 40;
   this.height = 40;
+  this.start = timestamp();
 }
 
 Enemy.prototype.update = function(state) {
-  // TODO
 }
 
-Enemy.prototype.draw = function(ctx) {
-  ctx.translate(this.x, this.y);
+Enemy.prototype.draw = function(ctx, state) {
+  ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+  var rot = (state.currentTick - this.start) % 1000;
+  if (rot > 500) rot = 500 - (rot % 500)
+  ctx.rotate(Math.PI * (-250 + rot) * 0.0002);
+  ctx.translate(-this.width / 2, -this.height / 2)
   ctx.drawImage(IMAGES.snowman, 0, 0, this.width, this.height);
 }
 
@@ -276,7 +280,7 @@ function init() {
     ctx.fillText("Level " + state.level, SCREEN_WIDTH / 2 - 50, 50);
     getThings().forEach(function(thing) {
       ctx.save();
-      if (thing.draw) thing.draw(ctx);
+      if (thing.draw) thing.draw(ctx, state);
       ctx.restore();
     });
   }
