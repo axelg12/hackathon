@@ -118,7 +118,6 @@ Airplane.prototype.shoot = function(state) {
 }
 
 function Shot(x, y, superShot) {
-  console.log('supershot', superShot);
   this.x = x;
   this.y = y;
   this.height = 30;
@@ -189,11 +188,11 @@ function Enemy(x, y, shield, image, shotImage) {
   this.shotImage = shotImage;
   this.start = timestamp();
   this.nextShot = this.start + Math.random() * 10000;
-  console.log('image', image);
 }
 
 Enemy.prototype.update = function(state) {
   if (state.currentTick >= this.nextShot) {
+    console.log('shotImage', this.shotImage.src);
     this.nextShot = timestamp() + 2000 + Math.random() * 10000;
     state.shots.push(new EnemyShot(this.x, this.y + this.height, this.shotImage))
   }
@@ -446,7 +445,6 @@ function init() {
   gameLoop();
 
   document.addEventListener('keydown', function(e) {
-    // console.log(e.keyCode);
     state.keysDown[e.keyCode] = true;
   });
   document.addEventListener('keyup', function(e) {
