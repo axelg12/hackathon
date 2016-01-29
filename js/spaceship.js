@@ -1,8 +1,9 @@
-var SCREEN_WIDTH = 750;
+var SCREEN_WIDTH = 700;
 var SCREEN_HEIGHT = 400;
-var SHOT_DELAY = 150;
+var SHOT_DELAY = 500;
 var SHOT_SPEED = 500;
-var AIRPLANE_SPEED = 100;
+var AIRPLANE_SPEED = 150;
+var AIRPLANE_SIZE = 40;
 
 function timestamp() {
   return Date.now();
@@ -43,16 +44,16 @@ function collides(a, b) {
 }
 
 var IMAGES = {
-  airplane: createImage('Air plane.png'),
+  airplane: createImage('AirPlane.png'),
   bigben: createImage('Big_ben.png'),
   snowman: createImage('Snowman.png'),
 };
 
 function Airplane() {
-  this.x = 350;
-  this.y = 350;
-  this.width = 50;
-  this.height = 50;
+  this.x = (SCREEN_WIDTH / 2) - (AIRPLANE_SIZE / 2);
+  this.y = SCREEN_HEIGHT - (AIRPLANE_SIZE / 2);
+  this.width = AIRPLANE_SIZE;
+  this.height = AIRPLANE_SIZE;
 }
 
 Airplane.prototype.draw = function(ctx) {
@@ -62,11 +63,16 @@ Airplane.prototype.draw = function(ctx) {
 }
 
 Airplane.prototype.moveLeft = function(state) {
-  this.x -= calculateMovement(state, AIRPLANE_SPEED);
+  if (this.x > 0) {
+    this.x -= calculateMovement(state, AIRPLANE_SPEED);
+  }
 }
 
 Airplane.prototype.moveRight = function(state) {
-  this.x += calculateMovement(state, AIRPLANE_SPEED);
+  var screenStop = SCREEN_WIDTH - AIRPLANE_SIZE - 10;
+  if (this.x < screenStop) {
+    this.x += calculateMovement(state, AIRPLANE_SPEED);
+  }
 }
 
 Airplane.prototype.shoot = function(state) {
