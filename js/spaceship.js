@@ -64,6 +64,7 @@ var IMAGES = {
   man: createImage('Parachute.png'),
   statue: createImage('Statue_of_liberty.png'),
   eiffelTower: createImage('Tokyo_tower.png'),
+  supershot: createImage('Party.png'),
 };
 
 function Airplane() {
@@ -111,31 +112,41 @@ Airplane.prototype.moveRight = function(state) {
 Airplane.prototype.shoot = function(state) {
   if (!this.death && (!this.lastShot || this.lastShot < timestamp() - SHOT_DELAY)) {
     this.lastShot = timestamp();
-    state.shots.push(new Shot(this.x + this.width / 2, this.y));
+    state.shots.push(new Shot(this.x + this.width / 2, this.y, state.superShot));
+    if (state.superShot > 0) state.superShot--;
   }
 }
 
-function Shot(x, y) {
+function Shot(x, y, superShot) {
+  console.log('supershot', superShot);
   this.x = x;
   this.y = y;
   this.height = 30;
   this.width = 274 / 960 * this.height;
+  this.superShot = superShot;
 }
 
 Shot.prototype.update = function(state) {
-  this.y -= calculateMovement(state, SHOT_SPEED);
+  var speed = SHOT_SPEED;
+  if (this.superShot) speed = SHOT_SPEED / 2;
+  this.y -= calculateMovement(state, speed);
   if (this.y <= -this.height) arrayRemove(state.shots, this);
 }
 
 Shot.prototype.draw = function(ctx) {
   ctx.translate(this.x, this.y);
-  ctx.drawImage(IMAGES.bigben, 0, 0, this.width, this.height);
+  if (this.superShot) {
+    ctx.rotate(Math.PI);
+    ctx.drawImage(IMAGES.supershot, 0, 0, this.width * 2, this.height *2);
+  } else {
+    ctx.drawImage(IMAGES.bigben, 0, 0, this.width, this.height);
+  }
 }
 
 Shot.prototype.collide = function(other, state) {
   if (other instanceof Enemy) {
-    other.takeDamage(this.supershot ? 10000 : 1, state);
-    arrayRemove(state.shots, this);
+    other.takeDamage(this.superShot ? 10000 : 1, state);
+    if (!this.superShot) arrayRemove(state.shots, this);
   }
 }
 
@@ -178,6 +189,7 @@ function Enemy(x, y, shield, image, shotImage) {
   this.shotImage = shotImage;
   this.start = timestamp();
   this.nextShot = this.start + Math.random() * 10000;
+  console.log('image', image);
 }
 
 Enemy.prototype.update = function(state) {
@@ -352,6 +364,7 @@ function init() {
   var state = {
     shots: [],
     enemies: initEnemies(1),
+    superShot: 5,
     animations: [],
     hivemind: new Hivemind(),
     airplane: new Airplane(),
