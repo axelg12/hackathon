@@ -5,6 +5,7 @@ var SHOT_SPEED = 500;
 var AIRPLANE_SPEED = 150;
 var AIRPLANE_SIZE = 40;
 var ENEMY_SPEED = 10;
+var ENEMY_SHOT_SPEED = 500;
 var DEATH_ANIMATION_DURATION = 1000;
 var IMAGE_URL = 'http://static.dohop.com/img/away/';
 
@@ -56,6 +57,7 @@ var IMAGES = {
   airplane: createImage('AirPlane.png'),
   bigben: createImage('Big_ben.png'),
   snowman: createImage('Snowman.png'),
+  skistick: createImage('ski_stick.png'),
 };
 
 function Airplane() {
@@ -140,9 +142,14 @@ function Enemy(x, y) {
   this.width = 40;
   this.height = 40;
   this.start = timestamp();
+  this.nextShot = this.start + Math.random() * 5000;
 }
 
 Enemy.prototype.update = function(state) {
+  if (state.currentTick >= this.nextShot) {
+    this.nextShot = timestamp() + 2000 + Math.random() * 5000;
+    state.shots.push(new EnemyShot(this.x, this.y + this.height))
+  }
 }
 
 Enemy.prototype.draw = function(ctx, state) {
@@ -158,6 +165,24 @@ Enemy.prototype.die = function(state) {
   this.diedAt = state.currentTick;
   arrayRemove(state.enemies, this);
   state.animations.push(new DeathAnimation(this.x, this.y, this.width, this.height, IMAGES.snowman));
+}
+
+function EnemyShot(x, y) {
+  this.x = x;
+  this.y = y;
+  this.width = 20;
+  this.height = 20;
+}
+
+EnemyShot.prototype.update = function(state) {
+  this.y += calculateMovement(state, ENEMY_SHOT_SPEED);
+  if (this.y > SCREEN_HEIGHT) {
+    arrayRemove(state.shots, this);
+  }
+}
+
+EnemyShot.prototype.draw = function(ctx, state) {
+  ctx.drawImage(IMAGES.skistick, this.x, this.y, this.width, this.height);
 }
 
 function DeathAnimation(x, y, width, height, image) {
