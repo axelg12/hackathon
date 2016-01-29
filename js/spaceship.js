@@ -5,6 +5,7 @@ var SHOT_SPEED = 500;
 var AIRPLANE_SPEED = 150;
 var AIRPLANE_SIZE = 40;
 var ENEMY_SPEED = 10;
+var DEATH_ANIMATION_DURATION = 1000;
 
 function timestamp() {
   return Date.now();
@@ -102,14 +103,9 @@ Shot.prototype.draw = function(ctx) {
 
 Shot.prototype.collide = function(other, state) {
   if (other instanceof Enemy) {
-    arrayRemove(state.enemies, other);
+    other.die(state);
     arrayRemove(state.shots, this);
-    if (checkLevelWon(state.enemies)) resetLevel(state);
   }
-}
-
-function checkLevelWon(enemies) {
-  return !enemies.length;
 }
 
 function resetLevel(state) {
@@ -149,6 +145,32 @@ Enemy.prototype.draw = function(ctx) {
 Enemy.prototype.die = function(state) {
   this.diedAt = state.currentTick;
   arrayRemove(state.enemies, this);
+  state.animations.push(new DeathAnimation(this.x, this.y, this.width, this.height, IMAGES.snowman));
+}
+
+function DeathAnimation(x, y, width, height, image) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+  this.image = image;
+  this.start = timestamp();
+}
+
+DeathAnimation.prototype.update = function(state) {
+  this.duration = state.currentTick - this.start;
+  if (state.currentTick > this.start + DEATH_ANIMATION_DURATION) {
+    arrayRemove(state.animations, this);
+  }
+}
+
+DeathAnimation.prototype.draw = function(ctx) {
+  ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+  ctx.rotate(Math.PI * (this.duration / 500));
+  ctx.translate(-this.width / 2, -this.height / 2);
+  var scale = (DEATH_ANIMATION_DURATION - this.duration) / DEATH_ANIMATION_DURATION;
+  ctx.scale(scale, scale);
+  ctx.drawImage(this.image, 0, 0, this.width, this.height);
 }
 
 function Hivemind() {
@@ -184,6 +206,7 @@ function init() {
   var state = {
     shots: [],
     enemies: [],
+    animations: [],
     hivemind: new Hivemind(),
     airplane: new Airplane(),
     keysDown: {},
@@ -197,7 +220,10 @@ function init() {
   }
 
   function getThings() {
-    return state.shots.concat(state.enemies).concat([state.airplane, state.hivemind]);
+    return state.animations
+      .concat(state.shots)
+      .concat(state.enemies)
+      .concat([state.airplane, state.hivemind]);
   }
 
   var canvas = document.getElementById('canvas');
@@ -219,9 +245,18 @@ function init() {
       for (var j = i + 1; j < things.length; j++) {
         if (things[j].x == null) continue;
         if (collides(things[i], things[j])) {
-          things[i].collide(things[j], state);
+          if (things[i].collide) {
+            things[i].collide(things[j], state);
+          } else if (things[j].collide) {
+            things[j].collide(things[i], state);
+          }
         }
       }
+    }
+
+    // check if level is done
+    if (state.enemies.length == 0 && state.animations.length == 0) {
+      resetLevel(state);
     }
   }
 
