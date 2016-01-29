@@ -1,4 +1,5 @@
-"images": [
+window.background = {
+  "images": [
         {
             "author_name": "Froskeland",
             "author_url": "http://www.flickr.com/people/froskeland/",
@@ -6272,4 +6273,5 @@
             "id": "2720029948",
             "license_url": "https://creativecommons.org/licenses/by/2.0/legalcode"
         }
-    ], 
+    ]
+}

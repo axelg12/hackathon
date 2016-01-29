@@ -6,6 +6,7 @@ var AIRPLANE_SPEED = 150;
 var AIRPLANE_SIZE = 40;
 var ENEMY_SPEED = 10;
 var DEATH_ANIMATION_DURATION = 1000;
+var IMAGE_URL = 'http://static.dohop.com/img/away/';
 
 function timestamp() {
   return Date.now();
@@ -28,6 +29,12 @@ function arrayRemove(array, item) {
 
 function within(thing, x, y) {
   return x >= thing.x && x <= thing.x + thing.width && y >= thing.y && y <= thing.y + thing.height;
+}
+
+function pickRandomImage() {
+  var length = window.background.images.length;
+  var random = Math.floor(Math.random() * (length));
+  return 'url(' + IMAGE_URL + window.background.images[random].id + '_720x500.jpg)' ;
 }
 
 function hasCornerInside(a, b) {
@@ -110,6 +117,7 @@ Shot.prototype.collide = function(other, state) {
 
 function resetLevel(state) {
   state.level++;
+  document.getElementById("background").style.background = pickRandomImage();
   for (var i = 0; i < 12; i++) {
     state.enemies.push(new Enemy(i * 50, 10))
   }
@@ -229,6 +237,7 @@ function init() {
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
 
+  document.getElementById("background").style.background = pickRandomImage();
 
   function update() {
     if (state.keysDown[37]) state.airplane.moveLeft(state);
