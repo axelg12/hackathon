@@ -4,6 +4,7 @@ var SHOT_DELAY = 500;
 var SHOT_SPEED = 500;
 var AIRPLANE_SPEED = 150;
 var AIRPLANE_SIZE = 40;
+var ENEMY_SPEED = 10;
 
 function timestamp() {
   return Date.now();
@@ -101,8 +102,19 @@ Shot.prototype.draw = function(ctx) {
 
 Shot.prototype.collide = function(other, state) {
   if (other instanceof Enemy) {
-    arrayRemove(state.enemies, other);
+    other.die(state);
   }
+}
+
+function SuperShot(x, y) {
+  this.x = x;
+  this.y = y;
+  this.width = 40;
+  this.height = 40;
+}
+
+SuperShot.prototype.update = function() {
+  
 }
 
 function Enemy(x, y) {
@@ -121,22 +133,57 @@ Enemy.prototype.draw = function(ctx) {
   ctx.drawImage(IMAGES.snowman, 0, 0, this.width, this.height);
 }
 
+Enemy.prototype.die = function(state) {
+  this.diedAt = state.currentTick;
+  arrayRemove(state.enemies, this);
+}
+
+function Hivemind() {
+  this.direction = 1;
+}
+
+Hivemind.prototype.update = function(state) {
+  if (this.direction === 1) {
+    var max = Math.max.apply(Math, state.enemies.map(function(e) { return e.x + e.width }));
+    if (max > SCREEN_WIDTH - 10) {
+      this.direction = -1;
+      this.drop(state);
+    }
+  } else {
+    var min = Math.min.apply(Math, state.enemies.map(function(e) { return e.x }));
+    if (min < 10) {
+      this.direction = 1;
+      this.drop(state);
+    }
+  }
+  for (var i = 0; i < state.enemies.length; i++) {
+    state.enemies[i].x += this.direction * calculateMovement(state, ENEMY_SPEED);
+  }
+}
+
+Hivemind.prototype.drop = function(state) {
+  for (var i = 0; i < state.enemies.length; i++) {
+    state.enemies[i].y += state.enemies[i].height + 5;
+  }
+}
+
 function init() {
   var state = {
     shots: [],
     enemies: [],
+    hivemind: new Hivemind(),
     airplane: new Airplane(),
     keysDown: {},
     prevTick: timestamp(),
     currentTick: null,
   };
 
-  for (var i = 0; i < 20; i++) {
+  for (var i = 0; i < 12; i++) {
     state.enemies.push(new Enemy(i * 50, 10))
   }
 
   function getThings() {
-    return state.shots.concat(state.enemies).concat(state.airplane);
+    return state.shots.concat(state.enemies).concat([state.airplane, state.hivemind]);
   }
 
   var canvas = document.getElementById('canvas');
@@ -153,7 +200,9 @@ function init() {
 
     var things = getThings();
     for (var i = 0; i < things.length; i++) {
+      if (things[i].x == null) continue;
       for (var j = i + 1; j < things.length; j++) {
+        if (things[j].x == null) continue;
         if (collides(things[i], things[j])) {
           things[i].collide(things[j], state);
         }
