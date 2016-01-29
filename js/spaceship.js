@@ -19,7 +19,7 @@ function createImage(src) {
   img.onerror = function() {
     console.log('could not load ' + src);
   }
-  img.src = '/images/' + src;
+  img.src = './images/' + src;
   return img;
 }
 
