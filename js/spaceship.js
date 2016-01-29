@@ -163,7 +163,7 @@ function resetLevel(state) {
 
 function initEnemies(level) {
   var enemies = [];
-  for (var i = 0; i < 12; i++) {
+  for (var i = 0; i < SCREEN_WIDTH / 50 - 2; i++) {
     for (var j = 0; j < 3; j++) {
       enemies.push(new Enemy(i * 50, 10 + j * 50, level + 2 - j,
         IMAGES[i % 2 == 0 ? 'snowman' : 'statue'],
@@ -379,29 +379,33 @@ Hivemind.prototype.drop = function(state) {
 }
 function reset(state) {
   state.shots = [];
+  state.powerUps = [],
+  state.superShot = 0,
   state.enemies = initEnemies(state.level);
   state.animations = [];
   state.hivemind = new Hivemind();
   state.airplane = new Airplane();
-  state.keysDown = {};
+  state.keysDown = state.keysDown || {};
   state.prevTick = timestamp();
   state.currentTick = timestamp();
   state.level = 1;
 }
 function init() {
   var state = {
-    shots: [],
-    powerUps: [],
-    enemies: initEnemies(1),
-    superShot: 0,
-    animations: [],
-    hivemind: new Hivemind(),
-    airplane: new Airplane(),
-    keysDown: {},
-    prevTick: timestamp(),
-    currentTick: timestamp(),
     level: 1,
   };
+
+  function setScreenSize() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    var canvas = document.getElementById('canvas');
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+    reset(state);
+  }
+  setScreenSize()
+
+  window.addEventListener('resize', setScreenSize);
 
   function getThings() {
     return state.animations
