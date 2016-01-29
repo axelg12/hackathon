@@ -102,6 +102,7 @@ Shot.prototype.draw = function(ctx) {
 Shot.prototype.collide = function(other, state) {
   if (other instanceof Enemy) {
     arrayRemove(state.enemies, other);
+    arrayRemove(state.shots, this);
   }
 }
 
