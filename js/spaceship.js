@@ -133,11 +133,16 @@ Shot.prototype.collide = function(other, state) {
 function resetLevel(state) {
   state.level++;
   document.getElementById("background").style.background = pickRandomImage();
-  for (var i = 0; i < 12; i++) {
-    state.enemies.push(new Enemy(i * 50, 10))
-  }
+  state.enemies = initEnemies(state);
 }
-
+function initEnemies(state) {
+  var enemies = [];
+  for (var i = 0; i < 12; i++) {
+    console.log('i50', i * 50);
+    enemies.push(new Enemy(i * 50, 10))
+  }
+  return enemies;
+}
 function SuperShot(x, y) {
   this.x = x;
   this.y = y;
@@ -187,6 +192,12 @@ function EnemyShot(x, y) {
   this.height = 20;
 }
 
+EnemyShot.prototype.collide = function(thing, state) {
+  if (thing instanceof Airplane) {
+    state.airplane.die(state);
+  }
+}
+
 EnemyShot.prototype.update = function(state) {
   this.y += calculateMovement(state, ENEMY_SHOT_SPEED);
   if (this.y > SCREEN_HEIGHT) {
@@ -208,10 +219,7 @@ function AirplaneDeath(x, y, width, height) {
 AirplaneDeath.prototype.update = function(state) {
   this.duration = state.currentTick - this.start;
   if (state.currentTick > this.start + DEATH_ANIMATION_DURATION) {
-    console.log(this.start + DEATH_ANIMATION_DURATION);
-    console.log(state.currentTick, 'state.currentTick');
     arrayRemove(state.animations, this);
-    // reset(state);
   }
 }
 
@@ -256,6 +264,7 @@ function Hivemind() {
 Hivemind.prototype.update = function(state) {
   if (this.direction === 1) {
     var max = Math.max.apply(Math, state.enemies.map(function(e) { return e.x + e.width }));
+    console.log('max', max);
     if (max > SCREEN_WIDTH - 10) {
       this.direction = -1;
       this.drop(state);
@@ -268,6 +277,7 @@ Hivemind.prototype.update = function(state) {
     }
   }
   for (var i = 0; i < state.enemies.length; i++) {
+    console.log('foobar', this.direction);
     state.enemies[i].x += this.direction * calculateMovement(state, ENEMY_SPEED);
   }
 }
@@ -279,7 +289,7 @@ Hivemind.prototype.drop = function(state) {
 }
 function reset(state) {
   state.shots = [];
-  state.enemies = [];
+  state.enemies = initEnemies(state);
   state.animations = [];
   state.hivemind = new Hivemind();
   state.airplane = new Airplane();
@@ -301,7 +311,7 @@ function init() {
     level: 1,
   };
 
-  for (var i = 0; i < 1; i++) {
+  for (var i = 0; i < 12; i++) {
     state.enemies.push(new Enemy(i * 50, 10))
   }
 
@@ -344,6 +354,9 @@ function init() {
     // check if level is done
     if (state.enemies.length == 0 && state.animations.length == 0) {
       resetLevel(state);
+    }
+    if (state.airplane.death && state.animations.length == 0) {
+      reset(state);
     }
   }
 
