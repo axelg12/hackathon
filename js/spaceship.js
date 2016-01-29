@@ -153,7 +153,7 @@ Shot.prototype.collide = function(other, state) {
 
 function resetLevel(state) {
   state.level++;
-  document.getElementById("background").style.background = pickRandomImage();
+  // document.getElementById("background").style.background = pickRandomImage();
   state.enemies = initEnemies(state);
 }
 
@@ -406,7 +406,7 @@ function init() {
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
 
-  document.getElementById("background").style.background = pickRandomImage();
+  //document.getElementById("background").style.background = pickRandomImage();
 
   function update() {
     if (state.keysDown[37]) state.airplane.moveLeft(state);
