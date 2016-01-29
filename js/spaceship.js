@@ -262,6 +262,8 @@ function Hivemind() {
 }
 
 Hivemind.prototype.update = function(state) {
+  if (state.enemies.length == 0) return;
+
   if (this.direction === 1) {
     var max = Math.max.apply(Math, state.enemies.map(function(e) { return e.x + e.width }));
     console.log('max', max);
@@ -295,7 +297,7 @@ function reset(state) {
   state.airplane = new Airplane();
   state.keysDown = {};
   state.prevTick = timestamp();
-  state.currentTick = null;
+  state.currentTick = timestamp();
   state.level = 1;
 }
 function init() {
@@ -307,7 +309,7 @@ function init() {
     airplane: new Airplane(),
     keysDown: {},
     prevTick: timestamp(),
-    currentTick: null,
+    currentTick: timestamp(),
     level: 1,
   };
 
