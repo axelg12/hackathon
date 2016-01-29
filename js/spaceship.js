@@ -65,13 +65,26 @@ function Airplane() {
   this.y = SCREEN_HEIGHT - (AIRPLANE_SIZE / 2);
   this.width = AIRPLANE_SIZE;
   this.height = AIRPLANE_SIZE;
+  this.death = false;
 }
 
 Airplane.prototype.draw = function(ctx) {
-  ctx.translate(this.x, this.y);
-  ctx.rotate(-Math.PI / 4);
-  ctx.drawImage(IMAGES.airplane, 0, 0, this.width, this.height);
+  if (this.death) {
+  } else {
+    ctx.translate(this.x, this.y);
+    ctx.rotate(-Math.PI / 4);
+    ctx.drawImage(IMAGES.airplane, 0, 0, this.width, this.height);
+  }
 }
+
+Airplane.prototype.update = function (state) {
+
+};
+
+Airplane.prototype.die = function (state) {
+  this.death = true;
+  state.animations.push(new AirplaneDeath(this.x, this.y, this.width, this.height));
+};
 
 Airplane.prototype.moveLeft = function(state) {
   if (this.x > 0) {
@@ -184,6 +197,32 @@ EnemyShot.prototype.update = function(state) {
 EnemyShot.prototype.draw = function(ctx, state) {
   ctx.drawImage(IMAGES.skistick, this.x, this.y, this.width, this.height);
 }
+function AirplaneDeath(x, y, width, height) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+  this.start = timestamp();
+}
+
+AirplaneDeath.prototype.update = function(state) {
+  this.duration = state.currentTick - this.start;
+  if (state.currentTick > this.start + DEATH_ANIMATION_DURATION) {
+    console.log(this.start + DEATH_ANIMATION_DURATION);
+    console.log(state.currentTick, 'state.currentTick');
+    arrayRemove(state.animations, this);
+    // reset(state);
+  }
+}
+
+AirplaneDeath.prototype.draw = function(ctx) {
+  ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+  ctx.rotate(Math.PI * (this.duration / 500));
+  ctx.translate(-this.width / 2, -this.height / 2);
+  var scale = (DEATH_ANIMATION_DURATION - this.duration) / DEATH_ANIMATION_DURATION;
+  ctx.scale(scale, scale);
+  ctx.drawImage(IMAGES.airplane, 0, 0, this.width, this.height);
+}
 
 function DeathAnimation(x, y, width, height, image) {
   this.x = x;
@@ -238,7 +277,17 @@ Hivemind.prototype.drop = function(state) {
     state.enemies[i].y += state.enemies[i].height + 5;
   }
 }
-
+function reset(state) {
+  state.shots = [];
+  state.enemies = [];
+  state.animations = [];
+  state.hivemind = new Hivemind();
+  state.airplane = new Airplane();
+  state.keysDown = {};
+  state.prevTick = timestamp();
+  state.currentTick = null;
+  state.level = 1;
+}
 function init() {
   var state = {
     shots: [],
