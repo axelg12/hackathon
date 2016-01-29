@@ -15,6 +15,9 @@ function timestamp() {
 
 function createImage(src) {
   var img = new Image();
+  img.onerror = function() {
+    console.log('could not load ' + src);
+  }
   img.src = '/images/' + src;
   return img;
 }
@@ -59,6 +62,8 @@ var IMAGES = {
   snowman: createImage('Snowman.png'),
   skistick: createImage('ski_stick.png'),
   man: createImage('Parachute.png'),
+  statue: createImage('Statue_of_liberty.png'),
+  eiffelTower: createImage('Tokyo_tower.png'),
 };
 
 function Airplane() {
@@ -104,7 +109,7 @@ Airplane.prototype.moveRight = function(state) {
 }
 
 Airplane.prototype.shoot = function(state) {
-  if (!this.lastShot || this.lastShot < timestamp() - SHOT_DELAY) {
+  if (!this.death && (!this.lastShot || this.lastShot < timestamp() - SHOT_DELAY)) {
     this.lastShot = timestamp();
     state.shots.push(new Shot(this.x + this.width / 2, this.y));
   }
@@ -129,7 +134,7 @@ Shot.prototype.draw = function(ctx) {
 
 Shot.prototype.collide = function(other, state) {
   if (other instanceof Enemy) {
-    other.die(state);
+    other.takeDamage(this.supershot ? 10000 : 1, state);
     arrayRemove(state.shots, this);
   }
 }
@@ -139,11 +144,16 @@ function resetLevel(state) {
   document.getElementById("background").style.background = pickRandomImage();
   state.enemies = initEnemies(state);
 }
-function initEnemies(state) {
+
+function initEnemies(level) {
   var enemies = [];
   for (var i = 0; i < 12; i++) {
-    console.log('i50', i * 50);
-    enemies.push(new Enemy(i * 50, 10))
+    for (var j = 0; j < 3; j++) {
+      enemies.push(new Enemy(i * 50, 10 + j * 50, level + 2 - j,
+        IMAGES[i % 2 == 0 ? 'snowman' : 'statue'],
+        IMAGES[i % 2 == 0 ? 'skistick' : 'eiffelTower']
+      ));
+    }
   }
   return enemies;
 }
@@ -158,19 +168,22 @@ SuperShot.prototype.update = function() {
 
 }
 
-function Enemy(x, y) {
+function Enemy(x, y, shield, image, shotImage) {
   this.x = x;
   this.y = y;
   this.width = 40;
   this.height = 40;
+  this.shield = shield;
+  this.image = image;
+  this.shotImage = shotImage;
   this.start = timestamp();
-  this.nextShot = this.start + Math.random() * 5000;
+  this.nextShot = this.start + Math.random() * 10000;
 }
 
 Enemy.prototype.update = function(state) {
   if (state.currentTick >= this.nextShot) {
-    this.nextShot = timestamp() + 2000 + Math.random() * 5000;
-    state.shots.push(new EnemyShot(this.x, this.y + this.height))
+    this.nextShot = timestamp() + 2000 + Math.random() * 10000;
+    state.shots.push(new EnemyShot(this.x, this.y + this.height, this.shotImage))
   }
 }
 
@@ -180,20 +193,24 @@ Enemy.prototype.draw = function(ctx, state) {
   if (rot > 500) rot = 500 - (rot % 500)
   ctx.rotate(Math.PI * (-250 + rot) * 0.0002);
   ctx.translate(-this.width / 2, -this.height / 2)
-  ctx.drawImage(IMAGES.snowman, 0, 0, this.width, this.height);
+  ctx.drawImage(this.image, 0, 0, this.width, this.height);
 }
 
-Enemy.prototype.die = function(state) {
-  this.diedAt = state.currentTick;
-  arrayRemove(state.enemies, this);
-  state.animations.push(new DeathAnimation(this.x, this.y, this.width, this.height, IMAGES.snowman));
+Enemy.prototype.takeDamage = function(points, state) {
+  this.shield -= points;
+  if (this.shield <= 0) {
+    this.diedAt = state.currentTick;
+    arrayRemove(state.enemies, this);
+    state.animations.push(new DeathAnimation(this.x, this.y, this.width, this.height, this.image));
+  }
 }
 
-function EnemyShot(x, y) {
+function EnemyShot(x, y, image) {
   this.x = x;
   this.y = y;
   this.width = 20;
   this.height = 20;
+  this.image = image;
 }
 
 EnemyShot.prototype.collide = function(thing, state) {
@@ -210,7 +227,7 @@ EnemyShot.prototype.update = function(state) {
 }
 
 EnemyShot.prototype.draw = function(ctx, state) {
-  ctx.drawImage(IMAGES.skistick, this.x, this.y, this.width, this.height);
+  ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
 }
 
 function ParachuteMan(x, y, width, height) {
@@ -299,7 +316,6 @@ Hivemind.prototype.update = function(state) {
 
   if (this.direction === 1) {
     var max = Math.max.apply(Math, state.enemies.map(function(e) { return e.x + e.width }));
-    console.log('max', max);
     if (max > SCREEN_WIDTH - 10) {
       this.direction = -1;
       this.drop(state);
@@ -312,7 +328,6 @@ Hivemind.prototype.update = function(state) {
     }
   }
   for (var i = 0; i < state.enemies.length; i++) {
-    console.log('foobar', this.direction);
     state.enemies[i].x += this.direction * calculateMovement(state, ENEMY_SPEED);
   }
 }
@@ -324,7 +339,7 @@ Hivemind.prototype.drop = function(state) {
 }
 function reset(state) {
   state.shots = [];
-  state.enemies = initEnemies(state);
+  state.enemies = initEnemies(state.level);
   state.animations = [];
   state.hivemind = new Hivemind();
   state.airplane = new Airplane();
@@ -336,7 +351,7 @@ function reset(state) {
 function init() {
   var state = {
     shots: [],
-    enemies: [],
+    enemies: initEnemies(1),
     animations: [],
     hivemind: new Hivemind(),
     airplane: new Airplane(),
@@ -345,10 +360,6 @@ function init() {
     currentTick: timestamp(),
     level: 1,
   };
-
-  for (var i = 0; i < 12; i++) {
-    state.enemies.push(new Enemy(i * 50, 10))
-  }
 
   function getThings() {
     return state.animations
