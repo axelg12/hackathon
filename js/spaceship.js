@@ -7,6 +7,7 @@ var AIRPLANE_SIZE = 40;
 var ENEMY_SPEED = 10;
 var ENEMY_SHOT_SPEED = 500;
 var DEATH_ANIMATION_DURATION = 1000;
+var POWER_DROP = 250;
 var IMAGE_URL = 'http://static.dohop.com/img/away/';
 
 function timestamp() {
@@ -65,6 +66,7 @@ var IMAGES = {
   statue: createImage('Statue_of_liberty.png'),
   eiffelTower: createImage('Tokyo_tower.png'),
   supershot: createImage('Party.png'),
+  beer: createImage('Beer.png'),
 };
 
 function Airplane() {
@@ -167,16 +169,31 @@ function initEnemies(level) {
   }
   return enemies;
 }
-function SuperShot(x, y) {
+function PowerUp(x, y) {
   this.x = x;
   this.y = y;
   this.width = 40;
   this.height = 40;
 }
 
-SuperShot.prototype.update = function() {
-
+PowerUp.prototype.collide = function(thing, state) {
+  if (thing instanceof Airplane) {
+    arrayRemove(state.powerUps, this);
+    state.superShot = 5;
+  }
 }
+
+PowerUp.prototype.update = function(state) {
+  this.y += calculateMovement(state, POWER_DROP);
+  if (this.y > SCREEN_HEIGHT) {
+    arrayRemove(state.shots, this);
+  }
+}
+
+PowerUp.prototype.draw = function(ctx, state) {
+  ctx.drawImage(IMAGES.beer, this.x, this.y, this.width, this.height);
+}
+
 
 function Enemy(x, y, shield, image, shotImage) {
   this.x = x;
@@ -211,6 +228,10 @@ Enemy.prototype.takeDamage = function(points, state) {
   this.shield -= points;
   if (this.shield <= 0) {
     this.diedAt = state.currentTick;
+    if (Math.random() < 1 / 5) {
+      state.powerUps.push(new PowerUp(this.x, this.y, this.width, this.height))
+    };
+
     arrayRemove(state.enemies, this);
     state.animations.push(new DeathAnimation(this.x, this.y, this.width, this.height, this.image));
   }
@@ -362,8 +383,9 @@ function reset(state) {
 function init() {
   var state = {
     shots: [],
+    powerUps: [],
     enemies: initEnemies(1),
-    superShot: 5,
+    superShot: 0,
     animations: [],
     hivemind: new Hivemind(),
     airplane: new Airplane(),
@@ -375,6 +397,7 @@ function init() {
 
   function getThings() {
     return state.animations
+      .concat(state.powerUps)
       .concat(state.shots)
       .concat(state.enemies)
       .concat([state.airplane, state.hivemind]);
