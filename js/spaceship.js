@@ -58,6 +58,7 @@ var IMAGES = {
   bigben: createImage('Big_ben.png'),
   snowman: createImage('Snowman.png'),
   skistick: createImage('ski_stick.png'),
+  man: createImage('Parachute.png'),
 };
 
 function Airplane() {
@@ -82,8 +83,11 @@ Airplane.prototype.update = function (state) {
 };
 
 Airplane.prototype.die = function (state) {
-  this.death = true;
-  state.animations.push(new AirplaneDeath(this.x, this.y, this.width, this.height));
+  if (!this.death) {
+    this.death = true;
+    state.animations.push(new AirplaneDeath(this.x, this.y, this.width, this.height));
+    state.animations.push(new ParachuteMan(this.x, this.y, this.width, this.height));
+  }
 };
 
 Airplane.prototype.moveLeft = function(state) {
@@ -208,6 +212,35 @@ EnemyShot.prototype.update = function(state) {
 EnemyShot.prototype.draw = function(ctx, state) {
   ctx.drawImage(IMAGES.skistick, this.x, this.y, this.width, this.height);
 }
+
+function ParachuteMan(x, y, width, height) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+  this.start = timestamp();
+}
+
+ParachuteMan.prototype.update = function(state) {
+  this.duration = state.currentTick - this.start;
+  if (state.currentTick > this.start + DEATH_ANIMATION_DURATION * 2) {
+    arrayRemove(state.animations, this);
+  }
+}
+
+ParachuteMan.prototype.draw = function(ctx) {
+  if (this.duration > (DEATH_ANIMATION_DURATION / 3)) {
+    this.y++;
+  } else {
+    this.y -= 2;
+  }
+  ctx.translate(this.x, this.y);
+  var scale = (DEATH_ANIMATION_DURATION * 1.5 - this.duration) / DEATH_ANIMATION_DURATION;
+  ctx.scale(scale, scale);
+  ctx.translate(-this.width / 2, -this.height / 2);
+  ctx.drawImage(IMAGES.man, 0, 0, this.width, this.height);
+}
+
 function AirplaneDeath(x, y, width, height) {
   this.x = x;
   this.y = y;
@@ -224,7 +257,7 @@ AirplaneDeath.prototype.update = function(state) {
 }
 
 AirplaneDeath.prototype.draw = function(ctx) {
-  ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+  ctx.translate(this.x - this.width / 2, this.y - this.height / 2);
   ctx.rotate(Math.PI * (this.duration / 500));
   ctx.translate(-this.width / 2, -this.height / 2);
   var scale = (DEATH_ANIMATION_DURATION - this.duration) / DEATH_ANIMATION_DURATION;
