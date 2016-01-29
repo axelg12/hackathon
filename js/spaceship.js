@@ -5,7 +5,7 @@ var SHOT_SPEED = 500;
 var AIRPLANE_SPEED = 150;
 var AIRPLANE_SIZE = 40;
 var ENEMY_SPEED = 10;
-var ENEMY_SHOT_SPEED = 500;
+var ENEMY_SHOT_SPEED = 300;
 var DEATH_ANIMATION_DURATION = 1000;
 var POWER_DROP = 250;
 var IMAGE_URL = 'http://static.dohop.com/img/away/';
@@ -149,12 +149,16 @@ Shot.prototype.collide = function(other, state) {
     other.takeDamage(this.superShot ? 10000 : 1, state);
     if (!this.superShot) arrayRemove(state.shots, this);
   }
+  if (other instanceof EnemyShot) {
+    arrayRemove(state.shots, this);
+    arrayRemove(state.shots, other);
+  }
 }
 
 function resetLevel(state) {
   state.level++;
   // document.getElementById("background").style.background = pickRandomImage();
-  state.enemies = initEnemies(state);
+  state.enemies = initEnemies(state.level);
 }
 
 function initEnemies(level) {
@@ -245,12 +249,6 @@ function EnemyShot(x, y, image) {
   this.image = image;
 }
 
-EnemyShot.prototype.collide = function(thing, state) {
-  if (thing instanceof Airplane) {
-    state.airplane.die(state);
-  }
-}
-
 EnemyShot.prototype.update = function(state) {
   this.y += calculateMovement(state, ENEMY_SHOT_SPEED);
   if (this.y > SCREEN_HEIGHT) {
@@ -260,6 +258,16 @@ EnemyShot.prototype.update = function(state) {
 
 EnemyShot.prototype.draw = function(ctx, state) {
   ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+}
+
+EnemyShot.prototype.collide = function(thing, state) {
+  if (thing instanceof Airplane) {
+    state.airplane.die(state);
+  }
+
+  if (thing instanceof Shot) {
+    thing.collide(this, state);
+  }
 }
 
 function ParachuteMan(x, y, width, height) {
@@ -425,7 +433,8 @@ function init() {
         if (collides(things[i], things[j])) {
           if (things[i].collide) {
             things[i].collide(things[j], state);
-          } else if (things[j].collide) {
+          }
+          if (things[j].collide) {
             things[j].collide(things[i], state);
           }
         }
